@@ -14,25 +14,20 @@ from sklearn.linear_model import LogisticRegression
 def load_data(filename):
     """ Loads training data from a file. """
     df = pd.DataFrame(pd.read_csv(filename, index_col=-0))
-    #print(df)
     return df
 
 
-def traindata(data):
+def train_data(data):
     """ Takes a pandas data object, using LogisticRegression to train on the data and return ?? """
-    #print(data)
-    # rows and columns
-    labels = data.iloc[:, -0:-0] # Add lables as classes
-    #labels = data.iloc[:, -1:-1] # Add lables as classes
-    print("labels: ", labels)
-    vectors = data.iloc[:,0:-2] # rest are vectors
-    #print("vectors", vectors)
-    #trained_data = LogisticRegression(random_state=0, solver='lbfgs',multi_class='multinomial' ).fit(labels, vectors) 
-    print_to_file(labels, "labels.csv")
-    print_to_file(vectors, "vectors.csv")
-    #print("Trained data")
-    #print(trained_data)
-    return data
+    labels = data.iloc[:,-1] # Use lables as classes    
+    vectors = data.iloc[:,0:-2] # The rest are the data
+    
+    trained_data = LogisticRegression(random_state=0, solver='lbfgs',multi_class='multinomial' ).fit(vectors, labels) 
+
+    #pickle.dump(trained_data, "model",mode='w')
+    with open(args.modelfile, 'wb') as f:
+        pickle.dump(trained_data, f)
+    #e = trained_data.predict(vectors) # Testing the data
 
 
 def print_to_file(data, filename):
@@ -54,10 +49,10 @@ args = parser.parse_args()
 
 print("Loading data from file {}.".format(args.datafile))
 data = load_data(args.datafile)
-trained_data = traindata(data)
+train_data(data)
 print("Training {}-gram model.".format(args.ngram))
 print("Writing table to {}.".format(args.modelfile))
-print_to_file(trained_data, args.modelfile)
+#print_to_file(trained_data, args.modelfile)
 
 # YOU WILL HAVE TO FIGURE OUT SOME WAY TO INTERPRET THE FEATURES YOU CREATED.
 # IT COULD INCLUDE CREATING AN EXTRA COMMAND-LINE ARGUMENT OR CLEVER COLUMN
