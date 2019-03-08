@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import argparse
 import numpy as np
 import pandas as pd
@@ -19,27 +20,28 @@ def load_data(filename):
 
 def train_data(data):
     """ Takes a pandas data object, using LogisticRegression to train on the data and return ?? """
-    labels = data.iloc[:,-1] # Use lables as classes    
-    vectors = data.iloc[:,0:-2] # The rest are the data
-    
-    trained_data = LogisticRegression(random_state=0, solver='lbfgs',multi_class='multinomial' ).fit(vectors, labels) 
+    labels = data.iloc[:, -1]  # Use lables as classes
+    vectors = data.iloc[:, 0:-2]  # The rest is the data
 
-    #pickle.dump(trained_data, "model",mode='w')
+    trained_data = LogisticRegression(
+        random_state=0, solver='lbfgs', multi_class='multinomial').fit(vectors, labels)
     with open(args.modelfile, 'wb') as f:
         pickle.dump(trained_data, f)
-    #e = trained_data.predict(vectors) # Testing the data
+    # e = trained_data.predict(vectors) # Test thingy to see if data is OK.
 
 
-def print_to_file(data, filename):
+''' def print_to_file(data, filename):
     """Takes a data object and prints it to a CVS file. """
     if filename[-3:] == "csv":
         print("Creating csv file.")
-        pd.DataFrame(data).to_csv(filename, mode='w') # 
+        pd.DataFrame(data).to_csv(filename, mode='w')
     else:
-        np.savetxt(filename, data)
+        np.savetxt(filename, data) '''
+
 
 parser = argparse.ArgumentParser(description="Train a maximum entropy model.")
-parser.add_argument("-N", "--ngram", metavar="N", dest="ngram", type=int, default=3, help="The length of ngram to be considered (default 3).")
+parser.add_argument("-N", "--ngram", metavar="N", dest="ngram", type=int,
+                    default=3, help="The length of ngram to be considered (default 3).")
 parser.add_argument("datafile", type=str,
                     help="The file name containing the features.")
 parser.add_argument("modelfile", type=str,

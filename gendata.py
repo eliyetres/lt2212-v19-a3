@@ -7,9 +7,12 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 # gendata.py -- Don't forget to put a reasonable amount code comments
+# in so that we better understand what you're doing when we grade!
+
+# add whatever additional imports you may need here. You may not use the
+# scikit-learn OneHotEncoder, or any related automatic one-hot encoders.
 import re
 from nltk import ngrams
-# in so that we better understand what you're doing when we grade!
 
 
 def readfile(filename, startline=0, endline=None):
@@ -21,7 +24,6 @@ def readfile(filename, startline=0, endline=None):
     wordlist = []
     with open(filename) as fp:
         for line in fp:
-
             w = re.sub(r'\n', '', line)
             w = re.sub(r'((?<=[a-z1-9])\/((\+?[A-Z]+)\$?-?)+|)', '', w)
             w = re.sub(r'((?<=([a-z]\'))\/([A-Z]+))', '', w)
@@ -31,7 +33,6 @@ def readfile(filename, startline=0, endline=None):
             # print(line)
             # print(w)
     if startline > 0 and endline is not None:
-
         only_words = only_words[startline:endline]
         for lst in only_words:
             for word in lst:
@@ -54,75 +55,61 @@ def readfile(filename, startline=0, endline=None):
     return wordlist
 
 
-#words = readfile("brown_rga.txt", 1, 5)
-
 def generate_vocab(wordlist):
     """ Takes a list of all  words in the vocabulary.
-    Returns an enumerated list of tuples for each word and its corresponding ID """    
-    vocab = list(enumerate(set(wordlist+["<s>"] ))) # Adding start tag to end of vocabulary
-    print("Example of word and it's ID: ", vocab[:3], vocab[:-3])
+    Returns an enumerated list of tuples for each word and its corresponding ID """
+    vocab = list(enumerate(set(wordlist+["<s>"]))
+                 )  # Adding start tag to end of vocabulary
+    print("Example of word and it's ID: ", vocab[:2], vocab[:-2])
     return vocab
-
-#vocab = generate_vocab(words)
 
 
 def create_ngram(words, n=3):
     """ Takes a list of word form the vocabulary.
-    Returns the selected number of n-grams as a list of tuples, default is 3 """
+    Returns the selected number of n-grams as a list of tuples, default is 3. """
     n_grams = ngrams(words, n, pad_left=True,
-                     left_pad_symbol='<s>', pad_right=False) # Padding n-grams with start tag
+                     left_pad_symbol='<s>', pad_right=False)  # Padding n-grams with start tag
     return n_grams
 
 
-#n_grams = list(create_ngram(words, 3))
-# print(n_grams)
-
 def one_hot(vocab, n_grams):
     """ Takes a numpy array of n-grams and the full vocabulary.
-    Matches the words' ID with the words in the n-gram and adds the ending word of the n-gram as a label.
-    Returns a numpy array of the n-grams' one-hot encodings and labels"""
-   
+    Matches the words' ID with the words in the n-gram, one-hot encodes them and adds the ending word of the n-gram as a label.
+    Returns a numpy array of the n-grams' one-hot encodings and labels. """
+
     ngram_len = len(n_grams)
     print("Number of words in the vocabulary: ", len(vocab))
     print("Number of n-grams: ", ngram_len)
-    vocab_ids = [id[0] for id in vocab] # word ids
+    vocab_ids = [id[0] for id in vocab]  # Word ids    
     arr = np.eye(ngram_len, dtype=int)[vocab_ids] # Fill an array with 0s, add 1
-    print(arr)
-    v_len = ngram_len* (args.ngram-1) # Length of 
-    one_hot_vectors = np.empty((0,v_len),int)
-    class_value_labels = [] 
-    for gram in n_grams:       
-        #print("N-gram: ", gram)  
-        #print("Label", gram[-1])      
-        class_value_labels.append(gram[-1]) # Use last word of n-gram as class value label
-        ngram_vector = np.array([],dtype=int)       
-        for word in gram[:-1]:            
-            #print("Word in ngram: ", word)
+    v_len = ngram_len * (args.ngram-1)  # Fill an empty array
+    one_hot_vectors = np.empty((0, v_len), int)
+    class_value_labels = []
+    for gram in n_grams:
+        # Use last word of n-gram as class value label
+        class_value_labels.append(gram[-1])
+        ngram_vector = np.array([], dtype=int)
+        for word in gram[:-1]:
             word_index = [item for item in vocab if word in item]
-            word_arr = arr[word_index[0][0]] # Corresponding index
-            ngram_vector = np.append(ngram_vector, word_arr)      
-        #ngram_vector.flatten()
-        #print("N-gram vector: ", ngram_vector)
+            word_arr = arr[word_index[0][0]]  # Corresponding index
+            ngram_vector = np.append(ngram_vector, word_arr)
         one_hot_vectors = np.vstack([one_hot_vectors, ngram_vector])
     print("Concat vector: ", one_hot_vectors)
-    vector_obj = pd.DataFrame(data =one_hot_vectors)
-    vector_obj['label'] = class_value_labels # Add word labels to last column
-    #print(vector_obj)
+    vector_obj = pd.DataFrame(data=one_hot_vectors)
+    vector_obj['label'] = class_value_labels  # Add word labels to last column
+
     return vector_obj
 
-#one_hot(vocab, n_grams)
 
 def print_to_file(data, filename):
     """Takes a data object and prints it to a CVS file. """
     if filename[-3:] == "csv":
         print("Creating csv file.")
-        pd.DataFrame(data).to_csv(filename, mode='w') # 
+        pd.DataFrame(data).to_csv(filename, mode='w')
     else:
-        np.savetxt(filename, data)
+        np.savetxt(filename, data) 
 
 
-# add whatever additional imports you may need here. You may not use the
-# scikit-learn OneHotEncoder, or any related automatic one-hot encoders.
 parser = argparse.ArgumentParser(description="Convert text to features")
 parser.add_argument("-N", "--ngram", metavar="N", dest="ngram", type=int,
                     default=3, help="The length of ngram to be considered (default 3).")

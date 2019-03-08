@@ -4,12 +4,13 @@ import numpy as np
 import pandas as pd
 import pickle
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+
 
 # test.py -- Don't forget to put a reasonable amount code comments
 # in so that we better understand what you're doing when we grade!
 
 # add whatever additional imports you may need here.
+from sklearn.metrics import accuracy_score
 
 def load_data(filename):
     """ Loads training data from a file. """
@@ -27,32 +28,25 @@ def load_model(filename):
 def test_data(data, model):
     """  Takes a training data object and a trained model and """ 
     labels = data[1]
-    trained_class = model.classes_ 
-   
+    trained_class = model.classes_   
     predicted_log = model.predict_log_proba  # The softmax function is used to find the predicted probability of each class.
     predict_prob = model.predict_proba
     print("Predicted classes: ", trained_class)
     print("True classes",labels )
-    trl = len(trained_class) # Keep classes same length
- 
+    trl = len(trained_class) # Keep classes same length 
     #print("Log probability: ", predicted_log(data[0]))
     #print("Probability: ", predict_prob(data[0]))
+    # Entropy / Perplexity
     total_entropy = []
     for p, l in zip(predict_prob(data[0]), predicted_log(data[0])):
         for pp, ll in zip(p,l):
             total_entropy.append(pp*ll)
     enl = len(total_entropy)
-    #datalen = len(labels)
     total_entropy = (sum(total_entropy))/enl
     total_perplexity= round(2**total_entropy, 2)
-    #alt_entr = (sum(total_entropy))/datalen
     print("Total entropy :", round(-total_entropy, 2))
     print("Perplexity: ", round(2**total_entropy, 2))
-    # Accuracy
-
     total_accuracy = accuracy_score(labels[:trl], trained_class)
-    #print("Mean accuracy: ", acc)
-
     return total_accuracy, total_perplexity 
 
 parser = argparse.ArgumentParser(description="Test a maximum entropy model.")
