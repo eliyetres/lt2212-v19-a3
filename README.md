@@ -2,7 +2,9 @@
 
 From Asad Sayeed's statistical NLP course at the University of Gothenburg.
 
-My name: YOUR NAME HERE
+My name:    Elin Hagman\
+GitHub:     eliyetres\
+GU:         gusihaliel
 
 ## Additional instructions
 
