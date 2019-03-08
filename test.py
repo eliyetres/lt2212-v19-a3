@@ -25,23 +25,35 @@ def load_model(filename):
     return model
 
 def test_data(data, model):
-    """  attribute classes_ and the predict_log_proba and predict_proba methods """ 
+    """  Takes a training data object and a trained model and """ 
+    labels = data[1]
     trained_class = model.classes_ 
    
     predicted_log = model.predict_log_proba  # The softmax function is used to find the predicted probability of each class.
     predict_prob = model.predict_proba
-    print("Trained classes: ", trained_class)
-    print(len(trained_class))
-    trl = len(trained_class)
-    print(len(data[1][:trl]))
-    print("Log probability: ", predicted_log)
-    print("Probability: ", predict_prob)
-
+    print("Predicted classes: ", trained_class)
+    print("True classes",labels )
+    trl = len(trained_class) # Keep classes same length
+ 
+    #print("Log probability: ", predicted_log(data[0]))
+    #print("Probability: ", predict_prob(data[0]))
+    total_entropy = []
+    for p, l in zip(predict_prob(data[0]), predicted_log(data[0])):
+        for pp, ll in zip(p,l):
+            total_entropy.append(pp*ll)
+    enl = len(total_entropy)
+    #datalen = len(labels)
+    total_entropy = (sum(total_entropy))/enl
+    total_perplexity= round(2**total_entropy, 2)
+    #alt_entr = (sum(total_entropy))/datalen
+    print("Total entropy :", round(-total_entropy, 2))
+    print("Perplexity: ", round(2**total_entropy, 2))
     # Accuracy
-    acc = accuracy_score(data[1][:trl], trained_class)
+
+    total_accuracy = accuracy_score(labels[:trl], trained_class)
     #print("Mean accuracy: ", acc)
 
-    return acc
+    return total_accuracy, total_perplexity 
 
 parser = argparse.ArgumentParser(description="Test a maximum entropy model.")
 parser.add_argument("-N", "--ngram", metavar="N", dest="ngram", type=int, default=3, help="The length of ngram to be considered (default 3).")
@@ -56,10 +68,11 @@ print("Loading data from file {}.".format(args.datafile))
 data = load_data(args.datafile)
 print("Loading model from file {}.".format(args.modelfile))
 model  = load_model(args.modelfile)
-acc = test_data(data, model)
+a, p = test_data(data, model)
+
 
 
 print("Testing {}-gram model.".format(args.ngram))
 
-print("Accuracy is {}%".format(acc))
-print("Perplexity is...")
+print("Accuracy is {}".format(a))
+print("Perplexity is {}".format(p))
