@@ -13,9 +13,10 @@ from sklearn.linear_model import LogisticRegression
 # scikit-learn OneHotEncoder, or any related automatic one-hot encoders.
 import re
 from nltk import ngrams
+import random
 
 
-def readfile(filename, startline=0, endline=None):
+def readfile(filename, split_at, startline=0, endline=None):
     """ Opens and reads a file with words and their POS-tags.
     Returns a list of words, starting and ending at n selected lines."""
     text_tag = []
@@ -32,16 +33,25 @@ def readfile(filename, startline=0, endline=None):
             only_words.append(w)
             # print(line)
             # print(w)
+    #endline = len(wordlist)
     if startline > 0 and endline is not None:
+        
         only_words = only_words[startline:endline]
+        test_selection = random.sample(range(startline, endline), args.test)
         for lst in only_words:
             for word in lst:
                 wordlist.append(word)
+            # Test and train data
+            test_data = wordlist[test_selection]
+            train_data = np.delete(wordlist, test_selection) 
             return wordlist
+    
     if startline > 0:
         only_words = only_words[startline:]
+        
     if endline is not None:
         only_words = only_words[endline:]
+        
     # ((?<=[a-z])\/([A-Z]+-?)+)|((?<=[.,\'])\/[.,\'])
     # This part is for the words with tags
     #taglist = text.split(" ")
@@ -52,8 +62,16 @@ def readfile(filename, startline=0, endline=None):
     for lst in only_words:
         for word in lst:
             wordlist.append(word)
+    # Test and train data
+    test_selection = random.sample(wordlist, args.test)
+    test_data = wordlist[test_selection]
+    train_data = np.delete(wordlist, test_selection)
+
+    print("Train data, ", train_data)
+    print("Test data :", test_data)
     return wordlist
 
+readfile("brown_rga.txt", 10)
 
 def generate_vocab(wordlist):
     """ Takes a list of all  words in the vocabulary.
@@ -119,6 +137,9 @@ parser.add_argument("-S", "--start", metavar="S", dest="startline", type=int,
 parser.add_argument("-E", "--end", metavar="E", dest="endline",
                     type=int, default=None,
                     help="What line of the input data file to end on. Default is None, whatever the last line is.")
+parser.add_argument("-T", "--test", metavar="T", dest="test",
+                    type=int, default=None,
+                    help="Specifies how many (randomly selected) lines within the range selected by -S and -E will be designated as testing data.")
 parser.add_argument("inputfile", type=str,
                     help="The file name containing the text data.")
 parser.add_argument("outputfile", type=str,
@@ -131,6 +152,8 @@ print("Loading data from file {}.".format(args.inputfile))
 
 print("Starting from line {}.".format(args.startline))
 
+
+
 if args.endline:
     print("Ending at line {}.".format(args.endline))
     words = readfile(args.inputfile, args.startline, args.endline)
@@ -138,6 +161,7 @@ else:
     print("Ending at last line of file.")
     words = readfile(args.inputfile, args.startline, args.endline)
 
+print("Splitting into test and training data.")
 vocab = generate_vocab(words)
 n_grams = list(create_ngram(words, args.ngram))
 one_data = one_hot(vocab, n_grams)
