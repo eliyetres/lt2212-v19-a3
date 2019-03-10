@@ -12,31 +12,28 @@ from sklearn.linear_model import LogisticRegression
 # add whatever additional imports you may need here.
 
 
+# python train.py -N 4 output300_100.train.csv 300_100_model
+
 def load_data(filename):
     """ Loads training data from a file. """
-    df = pd.DataFrame(pd.read_csv(filename, index_col=-0))
+    #df = pd.DataFrame(pd.read_csv(filename, index_col=-0))
+    df = pd.DataFrame(pd.read_csv(filename))
     return df
 
 
 def train_data(data):
-    """ Takes a pandas data object, using LogisticRegression to train on the data and return ?? """
-    labels = data.iloc[:, -1]  # Use lables as classes
-    vectors = data.iloc[:, 0:-2]  # The rest is the data
-
-    trained_data = LogisticRegression(
-        random_state=0, solver='lbfgs', multi_class='multinomial').fit(vectors, labels)
+    """ Takes a pandas data object, using LogisticRegression to train on the data.
+    Returns the trained model as a pickle object. """
+    # labels = data.iloc[:, -1]  # Use lables as classes
+    # vectors = data.iloc[:, 2:-1]  # The rest is the data
+    labels = data.iloc[:, 0]  # Use lables as classes
+    vectors = data.iloc[:, 2:-1]  # The rest is the data
+    trained_data = LogisticRegression(solver='lbfgs', multi_class='multinomial').fit(vectors, labels)
     with open(args.modelfile, 'wb') as f:
         pickle.dump(trained_data, f)
-    # e = trained_data.predict(vectors) # Test thingy to see if data is OK.
-
-
-''' def print_to_file(data, filename):
-    """Takes a data object and prints it to a CVS file. """
-    if filename[-3:] == "csv":
-        print("Creating csv file.")
-        pd.DataFrame(data).to_csv(filename, mode='w')
-    else:
-        np.savetxt(filename, data) '''
+    # Test model to see if data is OK.
+    predictions = trained_data.predict(vectors)
+    print(predictions)
 
 
 parser = argparse.ArgumentParser(description="Train a maximum entropy model.")
@@ -54,7 +51,7 @@ data = load_data(args.datafile)
 train_data(data)
 print("Training {}-gram model.".format(args.ngram))
 print("Writing table to {}.".format(args.modelfile))
-#print_to_file(trained_data, args.modelfile)
+
 
 # YOU WILL HAVE TO FIGURE OUT SOME WAY TO INTERPRET THE FEATURES YOU CREATED.
 # IT COULD INCLUDE CREATING AN EXTRA COMMAND-LINE ARGUMENT OR CLEVER COLUMN

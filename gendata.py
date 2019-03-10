@@ -24,31 +24,28 @@ def readfile(filename, testline, startline=0, endline=None):
     word_lines = []
     # Part for words only
     with open(filename) as fp:
-        for line in fp:
+        if endline == None:
+            selection = fp.readlines()[startline:]
+        else:
+            selection = [next(fp) for x in range(startline, endline)]
+        for line in selection:
+            # for line in fp:
             w = re.sub(r'\n', '', line)
-            w = re.sub(r'((?<=[a-z1-9])\/((\+?[A-Z]+)\$?-?)+|)', '', w)
+            w = re.sub(r'((?<=[a-z1-9])\/((\+?[A-Z]+)\$?-?)+)', '', w)
             w = re.sub(r'((?<=([a-z]\'))\/([A-Z]+))', '', w)
             w = re.sub(r'((?<=[.,\!?-\`])\/([.,\!?-\`]))', '', w)
             w = re.sub(r' {1,}', ' ', w).split(" ")
             word_lines.append(w)
             # print(line)
             # print(w)
-    #print("Startline {}, endline {}".format(startline, endline))
-    if startline > 0 and endline is not None:
-        word_lines = word_lines[startline:endline]
-    elif startline > 0 and endline is None:
-        word_lines = word_lines[startline:]
-    elif startline == 0 and endline is not None:
-        word_lines = word_lines[endline:]
-
     tr = word_lines[testline:]  # Split training and test lines
     te = word_lines[:testline]
     print("Train data lines: ", len(tr))
     print("Test data lines: ", len(te))
     train_data = [item for line in tr for item in line]  # Flatten lists
     test_data = [item for line in te for item in line]
-
-    return train_data, test_data
+    total_v_len = len(train_data+test_data)
+    return train_data, test_data, total_v_len
 
 
 def generate_vocab(data_list):
@@ -70,36 +67,33 @@ def create_ngram(words, n=3):
     return grams
 
 
-def one_hot(vocab, n_grams):
+def one_hot(vocab, vocab_len, n_grams):
     """ Takes a numpy array of n-grams and the full vocabulary.
     Matches the words' ID with the words in the n-gram, one-hot encodes them and adds the ending word of the n-gram as a label.
-    Returns a numpy array of the n-grams' one-hot encodings and labels. """
-    ngram_len = len(n_grams)
-    print("Number of words in the vocabulary: ", len(vocab))
-    print("Number of n-grams: ", ngram_len)
-    vocab_ids = [id[0] for id in vocab]  # Word ids
-    print("Generating ids", vocab_ids)
-    # Fill an array with 0s, add 1
-    arr = np.eye(ngram_len, dtype=int)[vocab_ids]
-    print("Creating arrays: ", arr)
-    v_len = ngram_len * (args.ngram-1)  # Fill an empty array
-    one_hot_vectors = np.empty((0, v_len), int)
-    print("Creating empty vectors")
-    class_value_labels = []
-    for gram in n_grams:
-        # Use last word of n-gram as class value label
-        print("Appending n-gram")
-        class_value_labels.append(gram[-1])
-        ngram_vector = np.array([], dtype=int)
-        for word in gram[:-1]:
-            word_index = [item for item in vocab if word in item]
-            word_arr = arr[word_index[0][0]]  # Corresponding index
-            ngram_vector = np.append(ngram_vector, word_arr)
-        one_hot_vectors = np.vstack([one_hot_vectors, ngram_vector])
-    #print("Concat vector: ", one_hot_vectors)
-    vector_obj = pd.DataFrame(data=one_hot_vectors)
-    vector_obj['label'] = class_value_labels  # Add word labels to last column
+    Returns a pandas object with the n-grams' one-hot encodings and labels. """
+    one_hots = {}
+    word_and_arr = {}
 
+    vocab_ids = [id[0] for id in vocab]  # ids
+    vocab_words = [id[1] for id in vocab]  # Word
+    # arr = np.eye(len(n_grams), dtype=np.int)[vocab_ids]  # Nice and fast but gives a memory error at 3000+ lines.
+    #word_and_arr = dict(zip(vocab_words, arr))
+
+    for i in vocab_ids:
+        arr = [0]*vocab_len
+        arr[i] = 1
+        word_and_arr[vocab_words[i]] = arr
+
+    for gram in n_grams:
+        c_label = gram[-1]  # Use last word of n-gram as class value label
+        ngram_vector = []
+        for word in gram[:-1]:
+            #ngram_vector.append(word_and_arr[word])
+            ngram_vector += word_and_arr[word]
+            print(word_and_arr[word])
+            print(len(word_and_arr[word]))
+        one_hots[c_label] = ngram_vector
+    vector_obj = pd.DataFrame.from_dict(data=one_hots, orient='index')
     return vector_obj
 
 
@@ -127,43 +121,46 @@ parser.add_argument("outputfile", type=str,
 
 args = parser.parse_args()
 
-if args.test > (args.endline - args.startline):
+# Parse errors
+if args.endline is not None and args.test > (args.endline - args.startline):
     exit("Error: Test data sample must be smaller than selected lines sample.")
-if args.startline > args.endline:
+if args.endline is not None and args.startline > args.endline:
     exit("Error: Starting line must be lower than ending line.")
+if args.ngram <= 2:
+    exit("Error: N-grams must must be trigrams or higher.")
 
 print("Loading data from file {}.".format(args.inputfile))
 
 print("Starting from line {}.".format(args.startline))
 
-print(args.endline - args.startline)
 
 if args.endline:
     print("Ending at line {}.".format(args.endline))
-    train_list, test_list = readfile(
+    train_list, test_list, total_v_len = readfile(
         args.inputfile, args.test, args.startline, args.endline)
 else:
     print("Ending at last line of file.")
-    train_list, test_list = readfile(args.inputfile, args.test, args.startline)
+    train_list, test_list, total_v_len = readfile(args.inputfile, args.test, args.startline)
 
 print("Using {} lines as test data.".format(args.test))
 
 # Train data
 train_vocab = generate_vocab(train_list)
 train_ngrams = list(create_ngram(train_list, args.ngram))
-train_data_encoded = one_hot(train_vocab, train_ngrams)
+train_data_encoded = one_hot(train_vocab, total_v_len, train_ngrams)
 
 # Test data
 test_vocab = generate_vocab(test_list)
 test_ngrams = list(create_ngram(test_list, args.ngram))
-test_data_encoded = one_hot(test_vocab, test_ngrams)
+test_data_encoded = one_hot(test_vocab, total_v_len, test_ngrams)
 
 print("Constructing {}-gram model.".format(args.ngram))
-print("Writing train data table to {}.".format(args.outputfile+".train"))
-print("Writing test data table to {}.".format(args.outputfile+".test"))
+
 
 print_to_file(train_data_encoded, args.outputfile+".train.csv")  # Train data
+print("Writing train data table to {}.".format(args.outputfile+".train.csv"))
 print_to_file(test_data_encoded, args.outputfile+".test.csv")  # Test data
+print("Writing test data table to {}.".format(args.outputfile+".test.csv"))
 
 # THERE ARE SOME CORNER CASES YOU HAVE TO DEAL WITH GIVEN THE INPUT
 # PARAMETERS BY ANALYZING THE POSSIBLE ERROR CONDITIONS.
