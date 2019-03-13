@@ -16,7 +16,6 @@ from sklearn.linear_model import LogisticRegression
 
 def load_data(filename):
     """ Loads training data from a file. """
-    #df = pd.DataFrame(pd.read_csv(filename, index_col=-0))
     df = pd.DataFrame(pd.read_csv(filename))
     return df
 
@@ -24,11 +23,10 @@ def load_data(filename):
 def train_data(data):
     """ Takes a pandas data object, using LogisticRegression to train on the data.
     Returns the trained model as a pickle object. """
-    # labels = data.iloc[:, -1]  # Use lables as classes
-    # vectors = data.iloc[:, 2:-1]  # The rest is the data
     labels = data.iloc[:, 0]  # Use lables as classes
-    vectors = data.iloc[:, 2:-1]  # The rest is the data
-    trained_data = LogisticRegression(solver='lbfgs', multi_class='multinomial').fit(vectors, labels)
+    vectors = data.iloc[:, 1:-1]  # The rest is the data
+    trained_data = LogisticRegression(
+        solver='lbfgs', multi_class='multinomial').fit(vectors, labels)
     with open(args.modelfile, 'wb') as f:
         pickle.dump(trained_data, f)
     # Test model to see if data is OK.

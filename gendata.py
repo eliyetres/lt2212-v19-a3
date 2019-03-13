@@ -15,7 +15,7 @@ import re
 import random
 from nltk import ngrams
 
-# python gendata.py -N 4 -S 500 -E 900 -T 100 brown_rga.txt output
+# python gendata.py -N 4 -S 500 -E 900 -T 100 brown_rga.txt output_300_100
 
 
 def readfile(filename, testline, startline=0, endline=None):
@@ -29,15 +29,12 @@ def readfile(filename, testline, startline=0, endline=None):
         else:
             selection = [next(fp) for x in range(startline, endline)]
         for line in selection:
-            # for line in fp:
             w = re.sub(r'\n', '', line)
             w = re.sub(r'((?<=[a-z1-9])\/((\+?[A-Z]+)\$?-?)+)', '', w)
             w = re.sub(r'((?<=([a-z]\'))\/([A-Z]+))', '', w)
             w = re.sub(r'((?<=[.,\!?-\`])\/([.,\!?-\`]))', '', w)
             w = re.sub(r' {1,}', ' ', w).split(" ")
             word_lines.append(w)
-            # print(line)
-            # print(w)
     tr = word_lines[testline:]  # Split training and test lines
     te = word_lines[:testline]
     print("Train data lines: ", len(tr))
@@ -71,29 +68,27 @@ def one_hot(vocab, vocab_len, n_grams):
     """ Takes a numpy array of n-grams and the full vocabulary.
     Matches the words' ID with the words in the n-gram, one-hot encodes them and adds the ending word of the n-gram as a label.
     Returns a pandas object with the n-grams' one-hot encodings and labels. """
-    one_hots = {}
     word_and_arr = {}
-
+    labels = []
+    dta = []
     vocab_ids = [id[0] for id in vocab]  # ids
     vocab_words = [id[1] for id in vocab]  # Word
-    # arr = np.eye(len(n_grams), dtype=np.int)[vocab_ids]  # Nice and fast but gives a memory error at 3000+ lines.
-    #word_and_arr = dict(zip(vocab_words, arr))
-
+    # Create the vector representations
     for i in vocab_ids:
         arr = [0]*vocab_len
         arr[i] = 1
         word_and_arr[vocab_words[i]] = arr
-
+    print("Finished creating representations.")
+    # Save classes and vectors
     for gram in n_grams:
-        c_label = gram[-1]  # Use last word of n-gram as class value label
+        labels.append(gram[-1])  # Use last word of n-gram as label
         ngram_vector = []
         for word in gram[:-1]:
-            #ngram_vector.append(word_and_arr[word])
             ngram_vector += word_and_arr[word]
-            print(word_and_arr[word])
-            print(len(word_and_arr[word]))
-        one_hots[c_label] = ngram_vector
-    vector_obj = pd.DataFrame.from_dict(data=one_hots, orient='index')
+        dta.append(ngram_vector)
+    print("Finished one-hot encoding.")
+    print("Creating data object.")
+    vector_obj = pd.DataFrame(data=dta, index=labels)
     return vector_obj
 
 
@@ -140,19 +135,20 @@ if args.endline:
         args.inputfile, args.test, args.startline, args.endline)
 else:
     print("Ending at last line of file.")
-    train_list, test_list, total_v_len = readfile(args.inputfile, args.test, args.startline)
+    train_list, test_list, total_v_len = readfile(
+        args.inputfile, args.test, args.startline)
 
 print("Using {} lines as test data.".format(args.test))
 
+vocab = generate_vocab(train_list+test_list)
+
 # Train data
-train_vocab = generate_vocab(train_list)
 train_ngrams = list(create_ngram(train_list, args.ngram))
-train_data_encoded = one_hot(train_vocab, total_v_len, train_ngrams)
+train_data_encoded = one_hot(vocab, total_v_len, train_ngrams)
 
 # Test data
-test_vocab = generate_vocab(test_list)
 test_ngrams = list(create_ngram(test_list, args.ngram))
-test_data_encoded = one_hot(test_vocab, total_v_len, test_ngrams)
+test_data_encoded = one_hot(vocab, total_v_len, test_ngrams)
 
 print("Constructing {}-gram model.".format(args.ngram))
 

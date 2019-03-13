@@ -11,7 +11,6 @@ from sklearn.linear_model import LogisticRegression
 # in so that we better understand what you're doing when we grade!
 
 # add whatever additional imports you may need here.
-from sklearn.metrics import accuracy_score
 
 
 # python test.py -N 4 output300_100.test.csv 300_100_model
@@ -19,10 +18,8 @@ from sklearn.metrics import accuracy_score
 def load_data(filename):
     """ Loads training data from a file. """
     data = pd.DataFrame(pd.read_csv(filename))
-    # labels = data.iloc[:,-1] # Use lables as classes
-    # vectors = data.iloc[:,0:-2] # The rest are the data
     labels = data.iloc[:, 0]  # Use lables as classes
-    vectors = data.iloc[:, 2:-1]  # The rest is the data
+    vectors = data.iloc[:, 1:-1]  # The rest is the data
     return vectors, labels
 
 
@@ -38,17 +35,19 @@ def test_data(data, model):
     vectors, labels = data  # X,y
     trained_class = model.classes_
     # The softmax function is used to find the predicted probability of each class
-    predicted_log = model.predict_log_proba
-    predict_prob = model.predict_proba
+    log = model.predict_log_proba(vectors)
+    prob = model.predict_proba(vectors)
     # Entropy
     total_entropy = []
-    for p, l in zip(predict_prob(vectors), predicted_log(vectors)):
+    for p, l in zip(log, prob):
+        entr = 0
         for pp, ll in zip(p, l):
-            total_entropy.append(pp*ll)
+            entr += (-1*pp*ll)
+        total_entropy.append(entr)
     enl = len(total_entropy)
     total_entropy = (sum(total_entropy))/enl
     # Perplexity
-    total_perplexity = round(2**total_entropy, 2)
+    total_perplexity = 2**total_entropy
     # Accuracy
     test_predictions = model.predict(vectors)
     total_accuracy = model.score(vectors, labels)
