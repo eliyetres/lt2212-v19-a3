@@ -18,14 +18,14 @@ Results
 
 | Arguments                | Train/test ratio | N-grams | Accuracy            | Perplexity         |
 |--------------------------|------------------|---------|---------------------|--------------------|
-| Larger data sets         |                  |         |                     |                    |
+| *Larger data sets*         |                  |         |                     |                    |
 |--------------------------|------------------|---------|---------------------|--------------------|
 | -S 500 -E 900 -T 60      | 300/100          | 3       | 0.12033898305084746 | 63.66197394489233  |
 | -N 4 -S 500 -E 900 -T 60 | 300/100          | 4       | 0.1211864406779661  | 63.95347533991584  |
 | -N 5 -S 500 -E 900 -T 60 | 300/100          | 5       | 0.44710947109471094 | 52.71499737446524  |
 | -N 6 -S 500 -E 900 -T 60 | 300/100          | 6       | 0.10932203389830508 | 66.41186261008907  |
 |--------------------------|------------------|---------|---------------------|--------------------|
-| Smaller data set         |                  |         |                     |                    |
+| *Smaller data set*         |                  |         |                     |                    |
 |--------------------------|------------------|---------|---------------------|--------------------|
 | -S 500 -E 536 -T 6       | 30/10            | 3       | 0.3176470588235294  | 31.0006128203334   |
 | -N 4 -S 500 -E 536 -T 6  | 30/10            | 4       | 0.09868421052631579 | 33.771870329218345 |
@@ -36,3 +36,4 @@ Results
 The results show that accuracy increases with a larger data set, but that perplexity increases with a larger data set.
 There is only a slight increase in accuracy with higher n-grams but also a slight increase in perplexity.
 
+When using 5-grams for the 300/60 set the data has the highest accuracy and the lowest perplexity.
