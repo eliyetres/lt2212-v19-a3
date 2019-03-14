@@ -33,4 +33,4 @@ Results
 The results show that accuracy increases with a larger data set, but that perplexity increases with a larger data set.
 There is only a slight increase in accuracy with higher n-grams but also a slight increase in perplexity.
 
-When using 5-grams for the 300/60 set the data has the highest accuracy and the lowest perplexity.
+When using 5-grams for the 300/60 set the data has the highest accuracy and the lowest perplexity ( don't know if this is correct, might have to run this part again).
